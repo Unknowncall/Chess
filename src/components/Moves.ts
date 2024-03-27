@@ -1,60 +1,27 @@
-import type { Board, Position, PieceType, Turn } from './Board'
-
-export const isPlayerInCheck = (board: Board, playerToCheck: Turn): boolean => {
-	const king = playerToCheck === 'w' ? 'k' : 'K'
-	const opponent = playerToCheck === 'w' ? 'b' : 'B'
-	const kingPosition = [] as Position
-
-	for (let i = 0; i < 8; i++) {
-		for (let j = 0; j < 8; j++) {
-			if (board[i][j] === king) {
-				kingPosition.push(i, j)
-				break
-			}
-		}
-	}
-
-	const moves = getPotentialMoves(board, kingPosition, 'k', playerToCheck)
-	return moves.some(move => {
-		const [x, y] = move
-		return board[x][y].toLowerCase() === opponent
-	})
-}
-export const isPlayerInCheckmate = (board: Board, playerToCheck: Turn): boolean => {
-	const player = playerToCheck === 'w' ? 'w' : 'b'
-	const opponent = playerToCheck === 'w' ? 'b' : 'w'
-
-	for (let i = 0; i < 8; i++) {
-		for (let j = 0; j < 8; j++) {
-			if (board[i][j].toLowerCase() === player) {
-				const moves = getPotentialMoves(board, [i, j], board[i][j].toLowerCase() as PieceType, playerToCheck)
-				for (const move of moves) {
-					const newBoard = board.map(row => row.slice())
-					const [x, y] = move
-					newBoard[x][y] = newBoard[i][j]
-					newBoard[i][j] = ''
-					if (!isPlayerInCheck(newBoard, playerToCheck)) {
-						return false
-					}
-				}
-			}
-		}
-	}
-
-	return true
-}
+import { type Board, type Position, type PieceType, type Turn, findByPiece } from './Board'
 
 const isSpaceOccupied = (board: Board, position: Position, turn: Turn): boolean => {
 	const [x, y] = position
 	const piece = board[x][y]
-	const isBlackTurn = turn === 'b'
 
-	if (isBlackTurn && piece === piece.toUpperCase()) {
+	if (piece.type === '') {
 		return true
 	}
 
-	if (!isBlackTurn && piece === piece.toLowerCase()) {
-		return true
+	// if it's white
+	if (turn === 'w') {
+		if (piece.color === 'b') {
+			return true
+		}
+		return false
+	}
+
+	// if it's black
+	if (turn === 'b') {
+		if (piece.color === 'w') {
+			return true
+		}
+		return false
 	}
 
 	return false
@@ -65,20 +32,20 @@ export const getPawnMoves = (board: Board, position: Position, turn: Turn): Posi
 	const moves = [] as Position[]
 	const direction = turn === 'w' ? -1 : 1
 
-	if (board[x + direction][y] === '') {
+	if (board[x + direction][y].type === '') {
 		moves.push([x + direction, y])
 		if ((turn === 'w' && x === 6) || (turn === 'b' && x === 1)) {
-			if (board[x + 2 * direction][y] === '') {
+			if (board[x + 2 * direction][y].type === '') {
 				moves.push([x + 2 * direction, y])
 			}
 		}
 	}
 
-	if (y > 0 && board[x + direction][y - 1] !== '' && board[x + direction][y - 1].toLowerCase() !== turn) {
+	if (y > 0 && board[x + direction][y - 1].type !== '' && board[x + direction][y - 1].color !== turn) {
 		moves.push([x + direction, y - 1])
 	}
 
-	if (y < 7 && board[x + direction][y + 1] !== '' && board[x + direction][y + 1].toLowerCase() !== turn) {
+	if (y < 7 && board[x + direction][y + 1].type !== '' && board[x + direction][y + 1].color !== turn) {
 		moves.push([x + direction, y + 1])
 	}
 
@@ -97,7 +64,7 @@ export const getKnightMoves = (board: Board, position: Position, turn: Turn): Po
 		const newX = x + dx
 		const newY = y + dy
 		if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
-			if (board[newX][newY] === '' || board[newX][newY].toLowerCase() !== turn) {
+			if (board[newX][newY].type === '' || board[newX][newY].color !== turn) {
 				moves.push([newX, newY])
 			}
 		}
@@ -117,10 +84,10 @@ export const getBishopMoves = (board: Board, position: Position, turn: Turn): Po
 		let newX = x + dx
 		let newY = y + dy
 		while (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
-			if (board[newX][newY] === '') {
+			if (board[newX][newY].type === '') {
 				moves.push([newX, newY])
 			} else {
-				if (board[newX][newY].toLowerCase() !== turn) {
+				if (board[newX][newY].color !== turn) {
 					moves.push([newX, newY])
 				}
 				break
@@ -144,10 +111,10 @@ export const getRookMoves = (board: Board, position: Position, turn: Turn): Posi
 		let newX = x + dx
 		let newY = y + dy
 		while (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
-			if (board[newX][newY] === '') {
+			if (board[newX][newY].type === '') {
 				moves.push([newX, newY])
 			} else {
-				if (board[newX][newY].toLowerCase() !== turn) {
+				if (board[newX][newY].color !== turn) {
 					moves.push([newX, newY])
 				}
 				break
@@ -180,7 +147,7 @@ export const getKingMoves = (board: Board, position: Position, turn: Turn): Posi
 		const newX = x + dx
 		const newY = y + dy
 		if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
-			if (board[newX][newY] === '' || board[newX][newY].toLowerCase() !== turn) {
+			if (board[newX][newY].color === '' || board[newX][newY].color !== turn) {
 				moves.push([newX, newY])
 			}
 		}
@@ -211,6 +178,55 @@ export const getPotentialMoves = (board: Board, position: Position, pieceType: P
 export const checkPromotion = (board: Board, position: Position, turn: Turn): void => {
 	const [x, y] = position
 	if ((turn === 'w' && x === 0) || (turn === 'b' && x === 7)) {
-		board[x][y] = turn === 'w' ? 'Q' : 'q'
+		const piece = board[x][y]
+		if (piece.type === 'p') {
+			board[x][y] = { type: 'q', color: piece.color }
+		}
 	}
+}
+
+export const isPlayerInCheck = (board: Board, playerToCheck: Turn): boolean => {
+	const pieceLocation = findByPiece(board, playerToCheck === 'w' ? 'k' : 'K')
+	if (pieceLocation.length === 0) {
+		return false
+	}
+
+	const opponent = playerToCheck === 'w' ? 'b' : 'w'
+
+	for (let i = 0; i < 8; i++) { // rows
+		for (let j = 0; j < 8; j++) { // columns
+			if (board[i][j].color === opponent) {
+				// get all potential moves for that piece
+				const moves = getPotentialMoves(board, [i, j], board[i][j].type as PieceType, playerToCheck)
+				console.log(`Got moves for ${board[i][j]} at ${i},${j}`, moves)
+				for (const move of moves) { // check if any of the moves are the king
+					const [x, y] = move
+					const pieceAtNewLocation = board[x][y]
+					if (pieceAtNewLocation.type === 'k' || pieceAtNewLocation.color === opponent) {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+export const isPlayerInCheckmate = (board: Board, playerToCheck: Turn): boolean => {
+	// basically need to make a new board with every possible move and check if the player is still in check
+
+	const kingPosition = findByPiece(board, playerToCheck === 'w' ? 'k' : 'K')[0]
+	const kingMoves = getKingMoves(board, kingPosition, playerToCheck)
+
+	for (const move of kingMoves) {
+		const newBoard = JSON.parse(JSON.stringify(board))
+		const [x, y] = move
+		newBoard[x][y] = newBoard[kingPosition[0]][kingPosition[1]]
+		newBoard[kingPosition[0]][kingPosition[1]] = ''
+		if (!isPlayerInCheck(newBoard, playerToCheck)) {
+			return false
+		}
+	}
+
+	return true
 }
