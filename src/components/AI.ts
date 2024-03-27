@@ -2,10 +2,13 @@ import { Board, Move, PieceType, Turn, findByPiece, getPieces } from "./Board"
 import { getAllPotentialMovesWithoutCheck } from "./Moves"
 
 export default function getBestNextMove(board: Board, turn: Turn, depth: number): Move {
-	const moves = getAllPotentialMovesWithoutCheck(board, turn)
+	let moves = getAllPotentialMovesWithoutCheck(board, turn)
 	const bestMove = { score: -Infinity, move: moves[0] }
 
 	moves.sort((a, b) => heuristic(b, turn) - heuristic(a, turn))
+
+	// set the array to minimax the first 100 moves
+	moves = moves.slice(0, 50)
 
 	moves.forEach(move => {
 		const newBoard = move.func()
@@ -48,25 +51,34 @@ function minimax(board: Board, depth: number, alpha: number, beta: number, isMax
 		return evaluateBoard(board)
 	}
 
-	const turn = isMaximizing ? 'w' : 'b'
+	const turn = isMaximizing ? 'b' : 'w'
 	const moves = getAllPotentialMovesWithoutCheck(board, turn)
-	const bestMove = isMaximizing ? -Infinity : Infinity
 
-	moves.forEach(move => {
-		const newBoard = move.func()
-		const score = minimax(newBoard, depth - 1, alpha, beta, !isMaximizing)
-		if (isMaximizing) {
-			alpha = Math.max(alpha, score)
-		} else {
-			beta = Math.min(beta, score)
-		}
-
-		if (beta <= alpha) {
-			return isMaximizing ? beta : alpha
-		}
-	})
-
-	return bestMove
+	if (isMaximizing) {
+		let maxEval = -Infinity
+		moves.forEach(move => {
+			const newBoard = move.func()
+			const evaluted = minimax(newBoard, depth - 1, alpha, beta, false)
+			maxEval = Math.max(maxEval, evaluted)
+			alpha = Math.max(alpha, evaluted)
+			if (beta <= alpha) {
+				return maxEval
+			}
+		})
+		return maxEval
+	} else {
+		let minEval = Infinity
+		moves.forEach(move => {
+			const newBoard = move.func()
+			const evaluted = minimax(newBoard, depth - 1, alpha, beta, true)
+			minEval = Math.min(minEval, evaluted)
+			beta = Math.min(beta, evaluted)
+			if (beta <= alpha) {
+				return minEval
+			}
+		})
+		return minEval
+	}
 }
 
 const pieceValue: { [key in PieceType]: number } = {

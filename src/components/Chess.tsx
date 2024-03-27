@@ -110,7 +110,7 @@ export default function Chess() {
 										// only generate the moves for black
 										if (opponent === 'b') {
 											console.log("Getting best next move...")
-											const nextBestMove = getBestNextMove(newBoard, opponent as Turn, 4)
+											const nextBestMove = getBestNextMove(newBoard, opponent as Turn, 3)
 											console.log(nextBestMove)
 											const nextBoard = nextBestMove.func() as Board
 											checkPromotion(nextBoard, nextBestMove.to, opponent as Turn)
