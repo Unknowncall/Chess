@@ -21,6 +21,7 @@ export default function getBestNextMove(board: Board, turn: Turn, depth: number)
 
 function heuristic(move: Move, turn: Turn): number {
 	const newBoard = move.func()
+	const random = Math.random()
 
 	// 1. Material advantage
 	const myPieces = getPieces(newBoard, turn)
@@ -38,7 +39,8 @@ function heuristic(move: Move, turn: Turn): number {
 	// 4. Control of the center
 	const centerControl = myPieces.filter(piece => piece.position[0] >= 3 && piece.position[0] <= 4 && piece.position[1] >= 3 && piece.position[1] <= 4).length
 
-	return materialAdvantage + pawnStructure - kingSafety + centerControl
+	// 5. Randomness
+	return random * 0.1 + (1 - random) * (materialAdvantage + pawnStructure - kingSafety + centerControl)
 }
 
 function minimax(board: Board, depth: number, alpha: number, beta: number, isMaximizing: boolean): number {

@@ -112,6 +112,19 @@ export default function Chess() {
 											console.log("Getting best next move...")
 											const nextBestMove = getBestNextMove(newBoard, opponent as Turn, 4)
 											console.log(nextBestMove)
+											const nextBoard = nextBestMove.func() as Board
+											checkPromotion(nextBoard, nextBestMove.to, opponent as Turn)
+											setBoard(nextBoard)
+											setTurn('w')
+											setSelected([-1, -1])
+											setPotentialMoves([])
+											// do the check/checkmate check
+											const playerInCheck = isPlayerInCheck(nextBoard, 'w')
+											setInCheck(playerInCheck)
+											if (playerInCheck) {
+												const playerInCheckmate = isPlayerInCheckmate(nextBoard, 'w')
+												setCheckmate(playerInCheckmate)
+											}
 										}
 									}
 								}}
