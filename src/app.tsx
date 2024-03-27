@@ -22,7 +22,7 @@ export function App() {
 
 			<div class="flex flex-col bg-slate-900 w-full h-fit absolute bottom-0">
 				<p class="text-white text-l text-center">Made by Zach Harvey</p>
-				<a class="text-white text-l text-center" href="https://github.com/Unknowncall/chess"><p>GitHub</p></a>
+				<a class="text-white text-l text-center" href="https://github.com/Unknowncall/chess" target="_blank"><p>GitHub</p></a>
 				<p class="text-white text-l text-center">&copy; {copyString}</p>
 			</div>
 		</div>

@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks"
 import { PieceType, Turn, Board, checkPromotion, Move } from "./Board"
-import { getPotentialMoves, isPlayerInCheck, isPlayerInCheckmate } from "./Moves"
+import { getPotentialMovesWithoutCheck, isPlayerInCheck, isPlayerInCheckmate } from "./Moves"
 import pawnBlack from "../assets/pieces/black/p.png"
 import knightBlack from "../assets/pieces/black/n.png"
 import bishopBlack from "../assets/pieces/black/b.png"
@@ -19,7 +19,7 @@ import normalJson from '../testing/normalBoard.json';
 
 export default function Chess() {
 
-	const [turn, setTurn] = useState('w')
+	const [turn, setTurn] = useState('w' as Turn)
 	const [board, setBoard] = useState(
 		normalJson as Board
 	)
@@ -29,8 +29,24 @@ export default function Chess() {
 	const [checkmate, setCheckmate] = useState(false)
 
 	return (
-		<div class="flex flex-col h-full w-full">
-			<div class="border-black border-2 w-fit mx-auto">
+		<div class={`flex flex-col h-full w-full`}>
+
+			{checkmate &&
+				<div class="absolute top-0 left-0 w-full h-full bg-white bg-opacity-80 flex flex-col justify-center items-center z-10 duration-200">
+					<h1 class="text-4xl">Checkmate!</h1>
+					<p>{turn === 'w' ? 'Black' : 'White'} wins!</p>
+					<button class="bg-blue-500 text-white p-2 rounded-md mt-4" onClick={() => {
+						setBoard(normalJson as Board)
+						setTurn('w')
+						setSelected([-1, -1])
+						setPotentialMoves([])
+						setInCheck(false)
+						setCheckmate(false)
+					}}>Play Again</button>
+				</div>
+			}
+
+			<div class={`*:border-black border-2 w-fit mx-auto ${checkmate ? 'blur' : ''}`}>
 				{board.map((row, i) => (
 					<div class="flex justify-center">
 						{row.map((boardSlot, j) => (
@@ -39,6 +55,7 @@ export default function Chess() {
 								${(i + j) % 2 === 0 ? 'bg-gray-300' : 'bg-gray-500'}
 								${selected[0] === i && selected[1] === j ? 'border-4 border-blue-500' : ''}
 								${potentialMoves.some(move => move.to[0] === i && move.to[1] === j) ? 'border-4 border-green-500' : ''}`
+									+ (inCheck && boardSlot.type === 'k' && boardSlot.color === turn ? ' border-4 border-red-500' : '')
 								}
 								onClick={() => {
 									if (selected[0] === -1 && selected[1] === -1) {
@@ -55,7 +72,7 @@ export default function Chess() {
 										if (boardSlot.type !== '') {
 											setSelected([i, j])
 										}
-										const moves = getPotentialMoves(board, [i, j], boardSlot.type as PieceType, turn as Turn)
+										const moves = getPotentialMovesWithoutCheck(board, [i, j], boardSlot.type as PieceType, turn as Turn)
 										setPotentialMoves(moves)
 									} else {
 										// if same space is clicked, unselect
@@ -75,13 +92,22 @@ export default function Chess() {
 										checkPromotion(newBoard, [i, j], turn as Turn)
 										setBoard(newBoard)
 
+										const opponent = turn === 'w' ? 'b' : 'w'
 										setSelected([-1, -1])
-										setTurn(turn === 'w' ? 'b' : 'w')
+										setTurn(opponent)
 										setPotentialMoves([])
+
+										// do the check/checkmate check
+										const playerInCheck = isPlayerInCheck(newBoard, opponent)
+										setInCheck(playerInCheck)
+										if (playerInCheck) {
+											const playerInCheckmate = isPlayerInCheckmate(newBoard, opponent)
+											setCheckmate(playerInCheckmate)
+										}
 									}
 								}}
 							>
-								<p class="absolute text-xs text-red-700">{i},{j}</p>
+								{/*<p class="absolute text-xs text-red-700">{i},{j}</p> */}
 								{boardSlot.type === 'p' && boardSlot.color === 'b' && <img src={pawnBlack} />}
 								{boardSlot.type === 'n' && boardSlot.color === 'b' && <img src={knightBlack} />}
 								{boardSlot.type === 'b' && boardSlot.color === 'b' && <img src={bishopBlack} />}

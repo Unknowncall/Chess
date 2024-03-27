@@ -3,7 +3,6 @@ export type Position = [number, number]
 export type Board = BoardRow[]
 export type BoardRow = BoardSlot[]
 export type BoardSlot = { type: PieceType | '', color: PieceColor | '' }
-
 export type Move = { from: Position, to: Position, func: () => Board }
 export type Turn = 'w' | 'b'
 export type PieceType = 'p' | 'n' | 'b' | 'r' | 'q' | 'k'
