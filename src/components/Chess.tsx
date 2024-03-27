@@ -17,6 +17,7 @@ import queenWhite from "../assets/pieces/white/q.png"
 import kingWhite from "../assets/pieces/white/k.png"
 
 import normalJson from '../testing/normalBoard.json';
+import getBestNextMove from "./AI"
 
 export default function Chess() {
 
@@ -105,10 +106,17 @@ export default function Chess() {
 											const playerInCheckmate = isPlayerInCheckmate(newBoard, opponent)
 											setCheckmate(playerInCheckmate)
 										}
+
+										// only generate the moves for black
+										if (opponent === 'b') {
+											console.log("Getting best next move...")
+											const nextBestMove = getBestNextMove(newBoard, opponent as Turn, 4)
+											console.log(nextBestMove)
+										}
 									}
 								}}
 							>
-								{/*<p class="absolute text-xs text-red-700">{i},{j}</p> */}
+								<p class="absolute text-xs text-red-700">{i},{j}</p>
 								{boardSlot.type === 'p' && boardSlot.color === 'b' && <img src={pawnBlack} />}
 								{boardSlot.type === 'n' && boardSlot.color === 'b' && <img src={knightBlack} />}
 								{boardSlot.type === 'b' && boardSlot.color === 'b' && <img src={bishopBlack} />}

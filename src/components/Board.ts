@@ -26,16 +26,21 @@ export const findByPiece = (board: Board, piece: PieceType, color?: PieceColor):
 	return positions
 }
 
-export const getPieces = (board: Board, color: PieceColor): Position[] => {
-	const positions = [] as Position[]
+export const getPieceAtLocation = (board: Board, position: Position): BoardSlot => {
+	const [x, y] = position
+	return board[x][y]
+}
+
+export const getPieces = (board: Board, color: PieceColor): { position: Position, boardSlot: BoardSlot }[] => {
+	const pieces = [] as { position: Position, boardSlot: BoardSlot }[]
 	for (let x = 0; x < 8; x++) {
 		for (let y = 0; y < 8; y++) {
 			if (board[x][y].color === color) {
-				positions.push([x, y])
+				pieces.push({ position: [x, y], boardSlot: board[x][y] })
 			}
 		}
 	}
-	return positions
+	return pieces
 }
 
 export const checkPromotion = (board: Board, position: Position, turn: Turn): void => {

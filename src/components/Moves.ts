@@ -209,7 +209,7 @@ export const getPotentialMoves = (board: Board, position: Position, pieceType: P
 			return []
 	}
 
-	const moves = [] as Move[]
+	let moves = [] as Move[]
 	for (const moveTo of positionMoves) {
 		const move = {
 			from: position, to: moveTo, func: () => {
@@ -223,6 +223,8 @@ export const getPotentialMoves = (board: Board, position: Position, pieceType: P
 		} as Move
 		moves.push(move)
 	}
+	moves = moves.filter(move => move.to[0] >= 0 && move.to[0] < 8 && move.to[1] >= 0 && move.to[1] < 8)
+	moves = moves.filter(move => move.from[0] >= 0 && move.from[0] < 8 && move.from[1] >= 0 && move.from[1] < 8)
 
 	const castlingMoves = getCastlingMoves(board, position, turn)
 	moves.push(...castlingMoves.map(move => ({
@@ -250,6 +252,7 @@ export const getPotentialMoves = (board: Board, position: Position, pieceType: P
 			return newBoard
 		}
 	})))
+
 	return moves
 }
 
@@ -260,7 +263,7 @@ export const isPlayerInCheck = (board: Board, playerToCheck: PieceColor): boolea
 	const opponentPieces = getPieces(board, opponent)
 
 	for (const piece of opponentPieces) {
-		const moves = getPotentialMoves(board, piece, board[piece[0]][piece[1]].type as PieceType, opponent as Turn)
+		const moves = getPotentialMoves(board, piece.position, board[piece.position[0]][piece.position[1]].type as PieceType, opponent as Turn)
 		if (moves.some(move => move.to[0] === kingPosition[0] && move.to[1] === kingPosition[1])) {
 			return true
 		}
@@ -275,12 +278,20 @@ export const doesMovePutPlayerInCheck = (move: Move, playerToCheck: PieceColor):
 
 export const getPotentialMovesWithoutCheck = (board: Board, position: Position, pieceType: PieceType, turn: Turn): Move[] => {
 	const moves = getPotentialMoves(board, position, pieceType, turn)
+	// make sure the move is on the board
+
 	return moves.filter(move => !doesMovePutPlayerInCheck(move, turn !== 'w' ? 'b' : 'w'))
+}
+
+export const getAllPotentialMovesWithoutCheck = (board: Board, turn: Turn): Move[] => {
+	const playerPieces = getPieces(board, turn)
+	const allMoves = playerPieces.flatMap(piece => getPotentialMovesWithoutCheck(board, piece.position, board[piece.position[0]][piece.position[1]].type as PieceType, turn))
+	return allMoves
 }
 
 // checking if X player is in checkmate
 export const isPlayerInCheckmate = (board: Board, playerToCheck: PieceColor): boolean => {
 	const playerPieces = getPieces(board, playerToCheck)
-	const allMoves = playerPieces.flatMap(piece => getPotentialMovesWithoutCheck(board, piece, board[piece[0]][piece[1]].type as PieceType, playerToCheck as Turn))
+	const allMoves = playerPieces.flatMap(piece => getPotentialMovesWithoutCheck(board, piece.position, board[piece.position[0]][piece.position[1]].type as PieceType, playerToCheck as Turn))
 	return allMoves.length === 0
 }
