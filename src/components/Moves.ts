@@ -32,6 +32,11 @@ export const getPawnMoves = (board: Board, position: Position, turn: Turn): Posi
 	const moves = [] as Position[]
 	const direction = turn === 'w' ? -1 : 1
 
+	// undefined check
+	if (x + direction < 0 || x + direction > 7) {
+		return []
+	}
+
 	if (board[x + direction][y].type === '') {
 		moves.push([x + direction, y])
 		if ((turn === 'w' && x === 6) || (turn === 'b' && x === 1)) {
