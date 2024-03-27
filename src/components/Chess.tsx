@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks"
-import { PieceType, Turn, Board } from "./Board"
-import { checkPromotion, getPotentialMoves, isPlayerInCheck, isPlayerInCheckmate } from "./Moves"
+import { PieceType, Turn, Board, checkPromotion, Move } from "./Board"
+import { getPotentialMoves, isPlayerInCheck, isPlayerInCheckmate } from "./Moves"
 import pawnBlack from "../assets/pieces/black/p.png"
 import knightBlack from "../assets/pieces/black/n.png"
 import bishopBlack from "../assets/pieces/black/b.png"
@@ -15,26 +15,16 @@ import rookWhite from "../assets/pieces/white/r.png"
 import queenWhite from "../assets/pieces/white/q.png"
 import kingWhite from "../assets/pieces/white/k.png"
 
+import normalJson from '../testing/normalBoard.json';
+
 export default function Chess() {
 
 	const [turn, setTurn] = useState('w')
-
-
 	const [board, setBoard] = useState(
-		[
-			[{ "type": "r", "color": "b" }, { "type": "n", "color": "b" }, { "type": "b", "color": "b" }, { "type": "q", "color": "b" }, { "type": "k", "color": "b" }, { "type": "b", "color": "b" }, { "type": "n", "color": "b" }, { "type": "r", "color": "b" }],
-			[{ "type": "p", "color": "b" }, { "type": "p", "color": "b" }, { "type": "p", "color": "b" }, { "type": "p", "color": "b" }, { "type": "p", "color": "b" }, { "type": "p", "color": "b" }, { "type": "p", "color": "b" }, { "type": "p", "color": "b" }],
-			[{ "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }],
-			[{ "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }],
-			[{ "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }],
-			[{ "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }, { "type": "", "color": "" }],
-			[{ "type": "p", "color": "w" }, { "type": "p", "color": "w" }, { "type": "p", "color": "w" }, { "type": "p", "color": "w" }, { "type": "p", "color": "w" }, { "type": "p", "color": "w" }, { "type": "p", "color": "w" }, { "type": "p", "color": "w" }],
-			[{ "type": "r", "color": "w" }, { "type": "n", "color": "w" }, { "type": "b", "color": "w" }, { "type": "q", "color": "w" }, { "type": "k", "color": "w" }, { "type": "b", "color": "w" }, { "type": "n", "color": "w" }, { "type": "r", "color": "w" }]
-		] as Board
+		normalJson as Board
 	)
-
 	const [selected, setSelected] = useState([-1, -1])
-	const [potentialMoves, setPotentialMoves] = useState([] as number[][])
+	const [potentialMoves, setPotentialMoves] = useState([] as Move[])
 	const [inCheck, setInCheck] = useState(false)
 	const [checkmate, setCheckmate] = useState(false)
 
@@ -45,10 +35,10 @@ export default function Chess() {
 					<div class="flex justify-center">
 						{row.map((boardSlot, j) => (
 							<div
-								class={`w-16 h-16 flex justify-center items-center
+								class={`h-16 w-16 flex justify-center items-center
 								${(i + j) % 2 === 0 ? 'bg-gray-300' : 'bg-gray-500'}
-								${selected[0] === i && selected[1] === j ? 'border-2 border-blue-500' : ''}
-								${potentialMoves.some(move => move[0] === i && move[1] === j) ? 'bg-green-500' : ''}`
+								${selected[0] === i && selected[1] === j ? 'border-4 border-blue-500' : ''}
+								${potentialMoves.some(move => move.to[0] === i && move.to[1] === j) ? 'border-4 border-green-500' : ''}`
 								}
 								onClick={() => {
 									if (selected[0] === -1 && selected[1] === -1) {
@@ -76,21 +66,14 @@ export default function Chess() {
 										}
 
 										// if the space clicked is not a potential move, return
-										if (!potentialMoves.some(move => move[0] === i && move[1] === j)) {
+										if (!potentialMoves.some(move => move.to[0] === i && move.to[1] === j)) {
 											return
 										}
 
-										const [selectedI, selectedJ] = selected
-										const newBoard = board.map(row => row.slice())
-										newBoard[i][j] = newBoard[selectedI][selectedJ]
-										newBoard[selectedI][selectedJ] = { type: '', color: '' }
+										const move = potentialMoves.find(move => move.to[0] === i && move.to[1] === j)
+										const newBoard = move?.func() as Board
 										checkPromotion(newBoard, [i, j], turn as Turn)
 										setBoard(newBoard)
-
-										const isCheck = isPlayerInCheck(newBoard, turn as Turn)
-										console.log('isCheck', isCheck)
-										//const isCheckmate = isPlayerInCheckmate(newBoard, turn as Turn)
-										//console.log('isCheckmate', isCheckmate)
 
 										setSelected([-1, -1])
 										setTurn(turn === 'w' ? 'b' : 'w')
@@ -117,8 +100,6 @@ export default function Chess() {
 					</div>
 				))}
 			</div>
-
-			<p>Turn: {turn === 'w' ? 'White' : 'Black'}</p>
 		</div>
 	)
 }

@@ -1,4 +1,4 @@
-import { type Board, type Position, type PieceType, type Turn, findByPiece } from './Board'
+import { type Board, type Position, type PieceType, type Turn, findByPiece, PieceColor, getPieces, Move } from './Board'
 
 const isSpaceOccupied = (board: Board, position: Position, turn: Turn): boolean => {
 	const [x, y] = position
@@ -156,77 +156,130 @@ export const getKingMoves = (board: Board, position: Position, turn: Turn): Posi
 	return moves.filter(move => isSpaceOccupied(board, move, turn))
 }
 
-export const getPotentialMoves = (board: Board, position: Position, pieceType: PieceType, turn: Turn): Position[] => {
+// if the king and rook haven't moved, and the spaces between them are empty, return the castling move
+export const getCastlingMoves = (board: Board, position: Position, turn: Turn): Position[] => {
+	const [x, y] = position
+	const moves = [] as Position[]
+	const king = board[x][y]
+
+	if (king.type !== 'k') {
+		return []
+	}
+
+	const kingSideRook = board[x][7]
+	const queenSideRook = board[x][0]
+
+	if (kingSideRook.type === 'r' && kingSideRook.color === turn) {
+		if (board[x][6].type === '' && board[x][5].type === '') {
+			moves.push([x, 7])
+		}
+	}
+
+	if (queenSideRook.type === 'r' && queenSideRook.color === turn) {
+		if (board[x][3].type === '' && board[x][2].type === '' && board[x][1].type === '') {
+			moves.push([x, 0])
+		}
+	}
+
+	return moves
+}
+
+export const getPotentialMoves = (board: Board, position: Position, pieceType: PieceType, turn: Turn): Move[] => {
+	const positionMoves = [] as Position[]
 	switch (pieceType) {
 		case 'p':
-			return getPawnMoves(board, position, turn)
+			positionMoves.push(...getPawnMoves(board, position, turn))
+			break
 		case 'n':
-			return getKnightMoves(board, position, turn)
+			positionMoves.push(...getKnightMoves(board, position, turn))
+			break
 		case 'b':
-			return getBishopMoves(board, position, turn)
+			positionMoves.push(...getBishopMoves(board, position, turn))
+			break
 		case 'r':
-			return getRookMoves(board, position, turn)
+			positionMoves.push(...getRookMoves(board, position, turn))
+			break
 		case 'q':
-			return getQueenMoves(board, position, turn)
+			positionMoves.push(...getQueenMoves(board, position, turn))
+			break
 		case 'k':
-			return getKingMoves(board, position, turn)
+			positionMoves.push(...getKingMoves(board, position, turn))
+			break
 		default:
 			return []
 	}
-}
 
-export const checkPromotion = (board: Board, position: Position, turn: Turn): void => {
-	const [x, y] = position
-	if ((turn === 'w' && x === 0) || (turn === 'b' && x === 7)) {
-		const piece = board[x][y]
-		if (piece.type === 'p') {
-			board[x][y] = { type: 'q', color: piece.color }
-		}
-	}
-}
-
-export const isPlayerInCheck = (board: Board, playerToCheck: Turn): boolean => {
-	const pieceLocation = findByPiece(board, playerToCheck === 'w' ? 'k' : 'K')
-	if (pieceLocation.length === 0) {
-		return false
-	}
-
-	const opponent = playerToCheck === 'w' ? 'b' : 'w'
-
-	for (let i = 0; i < 8; i++) { // rows
-		for (let j = 0; j < 8; j++) { // columns
-			if (board[i][j].color === opponent) {
-				// get all potential moves for that piece
-				const moves = getPotentialMoves(board, [i, j], board[i][j].type as PieceType, playerToCheck)
-				console.log(`Got moves for ${board[i][j]} at ${i},${j}`, moves)
-				for (const move of moves) { // check if any of the moves are the king
-					const [x, y] = move
-					const pieceAtNewLocation = board[x][y]
-					if (pieceAtNewLocation.type === 'k' || pieceAtNewLocation.color === opponent) {
-						return true
-					}
-				}
+	const moves = [] as Move[]
+	for (const moveTo of positionMoves) {
+		const move = {
+			from: position, to: moveTo, func: () => {
+				const newBoard = board.map(row => row.map(slot => ({ ...slot })))
+				const [x, y] = position
+				const [newX, newY] = moveTo
+				newBoard[newX][newY] = newBoard[x][y]
+				newBoard[x][y] = { type: '', color: '' }
+				return newBoard
 			}
+		} as Move
+		moves.push(move)
+	}
+
+	const castlingMoves = getCastlingMoves(board, position, turn)
+	moves.push(...castlingMoves.map(move => ({
+		from: position, to: move, func: () => {
+			// logic to handle castling, for ex if kingSideRook is at [x, 7], move it to [x, 6] and move the king to [x, 7]
+			// opposite for queenSideRook
+			const newBoard = board.map(row => row.map(slot => ({ ...slot })))
+			const [x, y] = position
+			const [newX, newY] = move
+			const king = newBoard[x][y]
+			const rook = newBoard[newX][newY]
+
+			// delete the king and rook from their original positions
+			if (newY === 7) {
+				newBoard[x][7] = { type: '', color: '' }
+				newBoard[x][6] = king
+				newBoard[x][5] = rook
+				newBoard[x][4] = { type: '', color: '' }
+			} else {
+				newBoard[x][0] = { type: '', color: '' }
+				newBoard[x][2] = king
+				newBoard[x][3] = rook
+				newBoard[x][4] = { type: '', color: '' }
+			}
+			return newBoard
+		}
+	})))
+	return moves
+}
+
+// checking if X player is in check
+export const isPlayerInCheck = (board: Board, playerToCheck: PieceColor): boolean => {
+	const opponent = playerToCheck === 'w' ? 'b' : 'w'
+	const kingPosition = findByPiece(board, 'k', playerToCheck)[0]
+	const opponentPieces = getPieces(board, opponent)
+
+	for (const piece of opponentPieces) {
+		const moves = getPotentialMoves(board, piece, board[piece[0]][piece[1]].type as PieceType, opponent as Turn)
+		if (moves.some(move => move.to[0] === kingPosition[0] && move.to[1] === kingPosition[1])) {
+			return true
 		}
 	}
 	return false
 }
 
-export const isPlayerInCheckmate = (board: Board, playerToCheck: Turn): boolean => {
-	// basically need to make a new board with every possible move and check if the player is still in check
-
-	const kingPosition = findByPiece(board, playerToCheck === 'w' ? 'k' : 'K')[0]
-	const kingMoves = getKingMoves(board, kingPosition, playerToCheck)
-
-	for (const move of kingMoves) {
-		const newBoard = JSON.parse(JSON.stringify(board))
-		const [x, y] = move
-		newBoard[x][y] = newBoard[kingPosition[0]][kingPosition[1]]
-		newBoard[kingPosition[0]][kingPosition[1]] = ''
-		if (!isPlayerInCheck(newBoard, playerToCheck)) {
-			return false
+// checking if X player is in checkmate
+export const isPlayerInCheckmate = (board: Board, playerToCheck: PieceColor): boolean => {
+	const playerPieces = getPieces(board, playerToCheck)
+	for (const piece of playerPieces) {
+		const moves = getPotentialMoves(board, piece, board[piece[0]][piece[1]].type as PieceType, playerToCheck as Turn)
+		for (const move of moves) {
+			const newBoard = board.map(row => row.map(slot => ({ ...slot })))
+			move.func()
+			if (!isPlayerInCheck(newBoard, playerToCheck)) {
+				return false
+			}
 		}
 	}
-
 	return true
 }
