@@ -268,8 +268,6 @@ export const isPlayerInCheck = (board: Board, playerToCheck: PieceColor): boolea
 	return false
 }
 
-
-
 export const doesMovePutPlayerInCheck = (move: Move, playerToCheck: PieceColor): boolean => {
 	const newBoard = move.func()
 	return isPlayerInCheck(newBoard, playerToCheck)

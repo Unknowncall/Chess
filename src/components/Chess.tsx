@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks"
 import { PieceType, Turn, Board, checkPromotion, Move } from "./Board"
 import { getPotentialMovesWithoutCheck, isPlayerInCheck, isPlayerInCheckmate } from "./Moves"
+
 import pawnBlack from "../assets/pieces/black/p.png"
 import knightBlack from "../assets/pieces/black/n.png"
 import bishopBlack from "../assets/pieces/black/b.png"
