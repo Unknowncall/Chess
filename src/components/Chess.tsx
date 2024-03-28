@@ -109,9 +109,7 @@ export default function Chess() {
 
 										// only generate the moves for black
 										if (opponent === 'b') {
-											console.log("Getting best next move...")
 											const nextBestMove = getBestNextMove(newBoard, opponent as Turn, 3)
-											console.log(nextBestMove)
 											const nextBoard = nextBestMove.func() as Board
 											checkPromotion(nextBoard, nextBestMove.to, opponent as Turn)
 											setBoard(nextBoard)
@@ -129,7 +127,7 @@ export default function Chess() {
 									}
 								}}
 							>
-								<p class="absolute text-xs text-red-700">{i},{j}</p>
+								{/* <p class="absolute text-xs text-red-700">{i},{j}</p> */}
 								{boardSlot.type === 'p' && boardSlot.color === 'b' && <img src={pawnBlack} />}
 								{boardSlot.type === 'n' && boardSlot.color === 'b' && <img src={knightBlack} />}
 								{boardSlot.type === 'b' && boardSlot.color === 'b' && <img src={bishopBlack} />}
