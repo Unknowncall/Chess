@@ -37,7 +37,7 @@ function heuristic(move: Move, turn: Turn): number {
 
 	// 3. King safety
 	const myKing = findByPiece(newBoard, 'k', turn)
-	const kingSafety = opponentPieces.reduce((sum, piece) => sum + getAllPotentialMovesWithoutCheck(newBoard, turn === 'w' ? 'b' : 'w').filter(move => move.to === myKing[0]).length, 0)
+	const kingSafety = opponentPieces.reduce((sum) => sum + getAllPotentialMovesWithoutCheck(newBoard, turn === 'w' ? 'b' : 'w').filter(move => move.to === myKing[0]).length, 0)
 
 	// 4. Control of the center
 	const centerControl = myPieces.filter(piece => piece.position[0] >= 3 && piece.position[0] <= 4 && piece.position[1] >= 3 && piece.position[1] <= 4).length
